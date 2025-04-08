@@ -13,4 +13,4 @@ Based on [Savannah](https://github.com/Oscillograph/Savannah) application framew
 - загрузка некоторых изображений в формате PNG/JPEG может произойти с искажением картинки;
 
 ## Screenshot ##
-<img src="https://raw.githubusercontent.com/Oscillograph/Img2FourierGUI/main/data/screenshot.png" alt="Img2FourierGUI" width="400"/>
+<img src="https://raw.githubusercontent.com/Oscillograph/Img2Fourier/main/data/screenshot.png" alt="Img2FourierGUI" width="400"/>
