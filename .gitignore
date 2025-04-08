@@ -1,0 +1,15 @@
+/makefile.win
+*.bak
+*.gch
+*.o
+*.bookmarks
+*.debug
+*.dev
+*.exe
+*.layout
+/build
+/release
+/Img2FourierGUI_private.h
+/Img2FourierGUI_private.rc
+/main.s
+
