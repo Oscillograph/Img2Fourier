@@ -13,3 +13,4 @@ Based on [Savannah](https://github.com/Oscillograph/Savannah) application framew
 
 ## Screenshot ##
 <img src="https://raw.githubusercontent.com/Oscillograph/Img2Fourier/main/data/screenshot.png" alt="Img2FourierGUI" width="400"/>
+<img src="https://raw.githubusercontent.com/Oscillograph/Img2Fourier/main/data/screenshot-2.png" alt="Img2FourierGUI" width="400"/>

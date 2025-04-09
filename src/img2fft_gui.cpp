@@ -60,7 +60,7 @@ namespace Savannah
 		fftw_data = new fftw_complex[width * height];
 		unsigned char* pixel = pixels;
 		uint32_t p, r, g, b, a;
-		p = 256 * 256 * 256 * 256;
+		p = 256 * 256 * 256 * 256 - 1;
 		r = 256 * 256 * 256;
 		g = 256 * 256;
 		b = 256;
@@ -77,20 +77,21 @@ namespace Savannah
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 2) * b +
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 3) * a;
 					
+					fftw_data[xIndex + yIndex][0] = (float)value / p;
+					
 					if (colors.find(value) != colors.end())
 					{
 						colors[value] += 1;
 					} else {
 						colors[value] = 1;
 					}
-					
-					fftw_data[xIndex + yIndex][0] = (float)value / p;
 				}
 				if (channelsOriginal == 3)
 				{
 					uint32_t value = *(pixels + (xIndex + yIndex) * channelsOriginal) * g + 
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 1) * b +
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 2) * a;
+					
 					fftw_data[xIndex + yIndex][0] = (float)value / r;
 					
 					if (colors.find(value) != colors.end())
@@ -140,41 +141,41 @@ namespace Savannah
 				
 				switch (mode)
 				{
-				case FourierSpectrumMode::Amplitude:
-					{
-						value = sqrt(fftw_data[xIndex + yIndex][0] * fftw_data[xIndex + yIndex][0] + fftw_data[xIndex + yIndex][1] * fftw_data[xIndex + yIndex][1]);
-						value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
-					}
-					break;
-				case FourierSpectrumMode::Phase:
-					{
-						if (fftw_data[xIndex + yIndex][0] == 0)
+					case FourierSpectrumMode::Amplitude:
 						{
-							if (fftw_data[xIndex + yIndex][1] >= 0)
-							{
-								value = pi_half;
-							} else {
-								value = -pi_half;
-							}
-						} else {
-							value = atan(fftw_data[xIndex + yIndex][1] / fftw_data[xIndex + yIndex][0]);
+							value = sqrt(fftw_data[xIndex + yIndex][0] * fftw_data[xIndex + yIndex][0] + fftw_data[xIndex + yIndex][1] * fftw_data[xIndex + yIndex][1]);
+							value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
 						}
-						
-						value = (value + pi_half) / pi;
-					}
-					break;
-				case FourierSpectrumMode::Real:
-					{
-						value = fftw_data[xIndex + yIndex][0];
-						value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
-					}
-					break;
-				case FourierSpectrumMode::Imaginary:
-					{
-						value = fftw_data[xIndex + yIndex][1];
-						value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
-					}
-					break;
+						break;
+					case FourierSpectrumMode::Phase:
+						{
+							if (fftw_data[xIndex + yIndex][0] == 0)
+							{
+								if (fftw_data[xIndex + yIndex][1] >= 0)
+								{
+									value = pi_half;
+								} else {
+									value = -pi_half;
+								}
+							} else {
+								value = atan(fftw_data[xIndex + yIndex][1] / fftw_data[xIndex + yIndex][0]);
+							}
+							
+							value = (value + pi_half) / pi;
+						}
+						break;
+					case FourierSpectrumMode::Real:
+						{
+							value = fftw_data[xIndex + yIndex][0];
+							value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
+						}
+						break;
+					case FourierSpectrumMode::Imaginary:
+						{
+							value = fftw_data[xIndex + yIndex][1];
+							value = (value * magnitudeOrderPolishCoefficient < 1.0) ? value * magnitudeOrderPolishCoefficient : 1.0;
+						}
+						break;
 				}
 				
 				colorScheme->GetColor(value, fftw_data_min, fftw_data_max, &red, &green, &blue);
@@ -186,7 +187,6 @@ namespace Savannah
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 3) = 255; // alpha
 			}
 		}
-		CONSOLE_LOG("Pixels updated");
 	}
 	
 	void Image::UpdateTexture()
@@ -408,6 +408,16 @@ namespace Savannah
 		};
 		m_ColorSchemesNamesList.push_back("Hot");
 		
+		m_ColorSchemesMap["Blue Space"] = {
+			{  0,   0,   0, 255},
+			{  0,   0, 128, 255},
+			{  0,   0, 255, 255},
+			{  0, 128, 256, 255},
+			{ 64, 255,  64, 255},
+			{255, 255, 255, 255},
+		};
+		m_ColorSchemesNamesList.push_back("Blue Space");
+		
 //		m_ColorSchemesMap["Native"] = {};
 //		m_ColorSchemesNamesList.push_back("Native");
 		
@@ -526,9 +536,6 @@ namespace Savannah
 						m_Image->NormalizeFFT();
 						lowerFFTWLevel = m_Image->fftw_data_min;
 						CONSOLE_LOG("FFTW max: ", m_Image->fftw_data_max, "; FFTW min: ", m_Image->fftw_data_min);
-//						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//						Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemesNamesList[m_ColorSchemeSelected]]};
-//						m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 						m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 						m_Image->UpdateTexture();
 						
@@ -562,8 +569,8 @@ namespace Savannah
 //						});
 //					CONSOLE_LOG("Sorted colors");
 //					
-//					m_ColorSchemesMap["Native"].clear();
-//					m_ColorSchemesMap["Native"].push_back({0, 0, 0, 0});
+//					m_ColorSchemes["Native"].colors.clear();
+//					m_ColorSchemes["Native"].colors.push_back({0, 0, 0, 0});
 //					uint8_t red, green, blue = 0;
 //					int colorsMax = 10;
 //					for (int i = 0; (i < colorsMax) && (i < m_Image->colorsSorted.size()); ++i)
@@ -573,17 +580,17 @@ namespace Savannah
 //						red = *look;
 //						green = *(look + 1);
 //						blue = *(look + 2);
-//						m_ColorSchemesMap["Native"].push_back({red, green, blue, 255});
+//						m_ColorSchemes["Native"].colors.push_back({red, green, blue, 255});
 //					}
-//					m_ColorSchemesMap["Native"].push_back({255, 255, 255, 255});
-//					CONSOLE_LOG("Colors in Native colormap: ", m_ColorSchemesMap["Native"].size());
-//					for (int k = 0; k < m_ColorSchemesMap["Native"].size(); ++k)
+//					m_ColorSchemes["Native"].colors.push_back({255, 255, 255, 255});
+//					CONSOLE_LOG("Colors in Native colormap: ", m_ColorSchemes["Native"].colors.size());
+//					for (int k = 0; k < m_ColorSchemes["Native"].colors.size(); ++k)
 //					{
 //						CONSOLE_LOG("Native color #", k, 
-//							": r:", m_ColorSchemesMap["Native"][k].x, 
-//							", g:", m_ColorSchemesMap["Native"][k].y, 
-//							", b:", m_ColorSchemesMap["Native"][k].z, 
-//							", a:", m_ColorSchemesMap["Native"][k].w);
+//							": r:", m_ColorSchemes["Native"].colors[k].x, 
+//							", g:", m_ColorSchemes["Native"].colors[k].y, 
+//							", b:", m_ColorSchemes["Native"].colors[k].z, 
+//							", a:", m_ColorSchemes["Native"].colors[k].w);
 //					}
 					
 					m_FFTCalculated = false;
@@ -660,9 +667,6 @@ namespace Savannah
 					lowerFFTWLevel = 0.0;
 				}
 				m_Image->fftw_data_min = lowerFFTWLevel;
-//				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//				Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//				m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 				m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 				m_Image->UpdateTexture();
 			}
@@ -677,9 +681,6 @@ namespace Savannah
 					upperFFTWlevel = 0.0;
 				}
 				m_Image->fftw_data_max = upperFFTWlevel;
-//				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//				Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//				m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 				m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 				m_Image->UpdateTexture();
 			}
@@ -697,9 +698,6 @@ namespace Savannah
 					{
 						m_ColorSchemeSelected = i;
 						m_ColorSchemeSelectedName = m_ColorSchemesNamesList[i];
-//						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//						Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//						m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 						m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 						m_Image->UpdateTexture();
 					}
@@ -742,9 +740,6 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
@@ -761,9 +756,6 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
@@ -778,9 +770,6 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
@@ -797,9 +786,6 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
-//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
-//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
 					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
