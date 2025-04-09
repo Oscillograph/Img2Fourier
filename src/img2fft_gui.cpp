@@ -47,6 +47,7 @@ namespace Savannah
 		
 		aspectRatio = (float)height / width;
 		CONSOLE_LOG("Loaded Image constraints (w, h, c, a/r): ", width, ", ", height, ", ", channelsOriginal, ", ", aspectRatio);
+		CONSOLE_LOG("Desired channels: ", channelsDesired);
 		
 		// reinitialize values
 		fftw_data_max = 0.0;
