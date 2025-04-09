@@ -2,6 +2,7 @@
 
 // #include <include/yaml_wrapper.h>
 #include <include/logger.h>
+//#include <initializer_list>
 
 #include <external/fftw/fftw3.h> // to calculate FFT
 
@@ -31,7 +32,7 @@ namespace Savannah
 		
 		void Load(const std::string& filepath);
 //		void BeforeUpdatePixels(); // adjust brightness 
-		void UpdatePixels(Img2FFTColorScheme* colorScheme = nullptr, FourierSpectrumMode mode = FourierSpectrumMode::Amplitude); // align pixels data with fftw data
+		void UpdatePixels(Img2FFTColorScheme* colorScheme, FourierSpectrumMode mode = FourierSpectrumMode::Amplitude); // align pixels data with fftw data
 		void UpdateTexture(); // if pixels were manipulated
 		void UpdateOriginalTexture(); // if an image was loaded
 		void NormalizeFFT();
@@ -46,6 +47,8 @@ namespace Savannah
 		double brightnessCoefficient = 2.0; // can be set up by user
 		double magnitudeOrderPolishCoefficient = 1.0; // calculated dynamically by the app
 		std::string path = "";
+		std::unordered_map<uint32_t, uint32_t> colors = {};
+		std::vector<std::pair<uint32_t, uint32_t>> colorsSorted = {};
 		
 		fftw_complex* fftw_data = nullptr;
 		double fftw_data_max = 0.0; // absolute value
@@ -120,8 +123,11 @@ namespace Savannah
 		Img2FFTMode m_CurrentMode = Img2FFTMode::Idle;
 		Img2FFTTasks m_CurrentTask = Img2FFTTasks::Idle;
 		std::vector<Img2FFTTasks> m_TaskStack = {};
-		std::vector<Img2FFTColorScheme> m_ColorSchemes = {};
+		std::vector<std::string> m_ColorSchemesNamesList = {};
 		int m_ColorSchemeSelected = 0;
+		std::string m_ColorSchemeSelectedName = "";
+		std::unordered_map<std::string, std::vector<ImVec4>> m_ColorSchemesMap = {};
+		std::unordered_map<std::string, Img2FFTColorScheme> m_ColorSchemes = {};
 		FourierSpectrumMode m_FourierSpectrumMode = FourierSpectrumMode::Amplitude;
 		
 		float TEXT_BASE_WIDTH = 0.0f;

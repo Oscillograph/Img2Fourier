@@ -10,7 +10,6 @@ Based on [Savannah](https://github.com/Oscillograph/Savannah) application framew
 ## Known bugs ##
 - диалоговое окно выбора файла не обновляет содержимое папки автоматически, если вручную вводить путь, содержащий кириллицу;
 - загрузка некоторых изображений в формате PNG/JPEG может приводить к вылету программы с ошибкой;
-- загрузка некоторых изображений в формате PNG/JPEG может произойти с искажением картинки;
 
 ## Screenshot ##
 <img src="https://raw.githubusercontent.com/Oscillograph/Img2Fourier/main/data/screenshot.png" alt="Img2FourierGUI" width="400"/>

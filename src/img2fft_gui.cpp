@@ -59,6 +59,12 @@ namespace Savannah
 		delete[] fftw_data;
 		fftw_data = new fftw_complex[width * height];
 		unsigned char* pixel = pixels;
+		uint32_t p, r, g, b, a;
+		p = 256 * 256 * 256 * 256;
+		r = 256 * 256 * 256;
+		g = 256 * 256;
+		b = 256;
+		a = 1;
 		for (int x = 0; x < width; ++x)
 		{
 			int xIndex = x*height; 
@@ -66,18 +72,33 @@ namespace Savannah
 			{
 				if (channelsOriginal == 4)
 				{
-					int value = *(pixels + (xIndex + yIndex) * channelsOriginal) + 
-					*(pixels + (xIndex + yIndex) * channelsOriginal + 1) +
-					*(pixels + (xIndex + yIndex) * channelsOriginal + 2) +
-					*(pixels + (xIndex + yIndex) * channelsOriginal + 3);
-					fftw_data[xIndex + yIndex][0] = (float)value / 1024;
+					uint32_t value = *(pixels + (xIndex + yIndex) * channelsOriginal) * r + 
+					*(pixels + (xIndex + yIndex) * channelsOriginal + 1) * g +
+					*(pixels + (xIndex + yIndex) * channelsOriginal + 2) * b +
+					*(pixels + (xIndex + yIndex) * channelsOriginal + 3) * a;
+					
+					if (colors.find(value) != colors.end())
+					{
+						colors[value] += 1;
+					} else {
+						colors[value] = 1;
+					}
+					
+					fftw_data[xIndex + yIndex][0] = (float)value / p;
 				}
 				if (channelsOriginal == 3)
 				{
-					int value = *(pixels + (xIndex + yIndex) * channelsOriginal) + 
-					*(pixels + (xIndex + yIndex) * channelsOriginal + 1) +
-					*(pixels + (xIndex + yIndex) * channelsOriginal + 2);
-					fftw_data[xIndex + yIndex][0] = (float)value / 768;
+					uint32_t value = *(pixels + (xIndex + yIndex) * channelsOriginal) * g + 
+					*(pixels + (xIndex + yIndex) * channelsOriginal + 1) * b +
+					*(pixels + (xIndex + yIndex) * channelsOriginal + 2) * a;
+					fftw_data[xIndex + yIndex][0] = (float)value / r;
+					
+					if (colors.find(value) != colors.end())
+					{
+						colors[value] += 1;
+					} else {
+						colors[value] = 1;
+					}
 				}
 			}
 		}
@@ -99,6 +120,8 @@ namespace Savannah
 		{
 			CONSOLE_RED("Image::UpdatePixels: color scheme is nullptr");
 			return;
+		} else {
+			CONSOLE_LOG("Chosen scheme: ", colorScheme->name);
 		}
 		magnitudeOrderPolishCoefficient = brightnessCoefficient*sqrt((fftw_data_max / fftw_data_min));
 		magnitudeOrderPolishCoefficient = (magnitudeOrderPolishCoefficient == INFINITY) ? 100.0 : magnitudeOrderPolishCoefficient;		
@@ -110,6 +133,7 @@ namespace Savannah
 		{
 			int xIndex = x*height;
 			int red, green, blue = 0;
+			
 			for (int yIndex = 0; yIndex < height; ++yIndex)
 			{
 				double value = 0.0;
@@ -162,6 +186,7 @@ namespace Savannah
 					*(pixels + (xIndex + yIndex) * channelsOriginal + 3) = 255; // alpha
 			}
 		}
+		CONSOLE_LOG("Pixels updated");
 	}
 	
 	void Image::UpdateTexture()
@@ -228,6 +253,8 @@ namespace Savannah
 		{
 			stbi_image_free(pixels);
 			pixels = nullptr;
+			colors.clear();
+			colorsSorted.clear();
 //			width = 0;
 //			height = 0;
 //			channelsOriginal = 0;
@@ -246,6 +273,7 @@ namespace Savannah
 	void Img2FFTColorScheme::GetColor(double value, double min, double max, int* r, int* g, int* b)
 	{
 		int left, right;
+//		CONSOLE_LOG(colors.size());
 		
 		if (value <= min)
 		{
@@ -288,130 +316,113 @@ namespace Savannah
 		};
 		m_fileDialogInfo.fileExtensionSelected = -1;
 		
-		m_ColorSchemes.push_back(
-			{
-				"Greenish",
-				{
-					{  0,   0,   0, 255},
-					{196, 255, 128, 255},
-					{255, 255, 255, 255}
-				}
-			});
+		m_ColorSchemesMap["Greenish"] = {
+			{  0,   0,   0, 255},
+			{196, 255, 128, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Greenish");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Matrix",
-				{
-					{  0,   0,   0, 255},
-					{  0, 255,   0, 255},
-					{  0, 255, 255, 255},
-					{255, 255, 255, 255}
-				}
-			});
+		m_ColorSchemesMap["Matrix"] = {
+			{  0,   0,   0, 255},
+			{  0, 255,   0, 255},
+			{  0, 255, 255, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Matrix");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Black & White",
-				{
-					{  0,   0,   0, 255},
-					{255, 255, 255, 255}
-				}
-			});
+		m_ColorSchemesMap["Black & White"] = {
+			{  0,   0,   0, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Black & White");
 		
-		m_ColorSchemes.push_back(
-			{
-				"White & Black",
-				{
-					{255, 255, 255, 255},
-					{  0,   0,   0, 255}
-				}
-			});
+		m_ColorSchemesMap["White & Black"] = {
+			{255, 255, 255, 255},
+			{  0,   0,   0, 255}
+		};
+		m_ColorSchemesNamesList.push_back("White & Black");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Jet with B&W",
-				{
-					{  0,   0,   0, 255},
-					{  0,   0, 255, 255},
-					{  0, 255, 255, 255},
-					{  0, 255,   0, 255},
-					{255, 255,   0, 255},
-					{255,   0,   0, 255},
-					{255, 255, 255, 255}
-				}
-			});
+		m_ColorSchemesMap["Jet with B&W"] = {
+			{  0,   0,   0, 255},
+			{  0,   0, 255, 255},
+			{  0, 255, 255, 255},
+			{  0, 255,   0, 255},
+			{255, 255,   0, 255},
+			{255,   0,   0, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Jet with B&W");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Jet",
-				{
-					{  0,   0,  64, 255},
-					{  0,   0, 255, 255},
-					{  0, 255, 255, 255},
-					{  0, 255,   0, 255},
-					{255, 255,   0, 255},
-					{255,   0,   0, 255},
-					{ 64,   0,   0, 255}
-				}
-			});
+		m_ColorSchemesMap["Jet"] = {
+			{  0,   0,  64, 255},
+			{  0,   0, 255, 255},
+			{  0, 255, 255, 255},
+			{  0, 255,   0, 255},
+			{255, 255,   0, 255},
+			{255,   0,   0, 255},
+			{ 64,   0,   0, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Jet");
 		
-		m_ColorSchemes.push_back(
-			{
-				"HSV",
-				{
-					{255,   0,   0, 255},
-					{255, 255,   0, 255},
-					{  0, 255,   0, 255},
-					{  0, 255, 255, 255},
-					{  0,   0, 255, 255},
-					{255,   0, 255, 255},
-					{255,   0,   0, 255}
-				}
-			});
+		m_ColorSchemesMap["HSV"] = {
+			{255,   0,   0, 255},
+			{255, 255,   0, 255},
+			{  0, 255,   0, 255},
+			{  0, 255, 255, 255},
+			{  0,   0, 255, 255},
+			{255,   0, 255, 255},
+			{255,   0,   0, 255}
+		};
+		m_ColorSchemesNamesList.push_back("HSV");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Inferno",
-				{
-					{  0,   0,   0, 255},
-					{255,   0, 255, 255},
-					{255, 127, 127, 255},
-					{255, 255,   0, 255},
-					{255, 255, 255, 255}
-				}
-			});
+		m_ColorSchemesMap["Inferno"] = {
+			{  0,   0,   0, 255},
+			{255,   0, 255, 255},
+			{255, 127, 127, 255},
+			{255, 255,   0, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Inferno");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Summer",
-				{
-					{  0, 127, 127, 255},
-					{255, 255,   0, 255},
-				}
-			});
+		m_ColorSchemesMap["Summer"] = {
+			{  0, 127, 127, 255},
+			{255, 255,   0, 255},
+		};
+		m_ColorSchemesNamesList.push_back("Summer");
 		
-		m_ColorSchemes.push_back(
-			{
-				"Seismic",
-				{
-					{  0,   0,   0, 255},
-					{  0,   0, 255, 255},
-					{255, 255, 255, 255},
-					{255,   0,   0, 255},
-					{  127,   0,   0, 255},
-				}
-			});
+		m_ColorSchemesMap["Seismic"] = {
+			{  0,   0,   0, 255},
+			{  0,   0, 255, 255},
+			{255, 255, 255, 255},
+			{255,   0,   0, 255},
+			{  127,   0,   0, 255},
+		};
+		m_ColorSchemesNamesList.push_back("Seismic");
 		
-		m_ColorSchemes.push_back(
+		m_ColorSchemesMap["Hot"] = {
+			{  0,   0,   0, 255},
+			{255,   0,   0, 255},
+			{255, 255,   0, 255},
+			{255, 255, 255, 255}
+		};
+		m_ColorSchemesNamesList.push_back("Hot");
+		
+//		m_ColorSchemesMap["Native"] = {};
+//		m_ColorSchemesNamesList.push_back("Native");
+		
+		m_ColorSchemeSelected = 0;
+		m_ColorSchemeSelectedName = m_ColorSchemesNamesList[m_ColorSchemeSelected];
+		
+		for (auto it = m_ColorSchemesMap.begin(); it != m_ColorSchemesMap.end(); ++it)
+		{
+			m_ColorSchemes[it->first] = {it->first, {}};
+			for (int i = 0; i < m_ColorSchemesMap[it->first].size(); ++i)
 			{
-				"Hot",
-				{
-					{  0,   0,   0, 255},
-					{255,   0,   0, 255},
-					{255, 255,   0, 255},
-					{255, 255, 255, 255}
-				}
-			});
+				m_ColorSchemes[it->first].colors.push_back(m_ColorSchemesMap[it->first][i]);
+			}
+			CONSOLE_LOG(it->first, " size: ", m_ColorSchemes[it->first].colors.size());
+		}
 		
 		m_CurrentMode = Img2FFTMode::Idle;
 		CONSOLE_LOG("Enter Idle mode");
@@ -515,7 +526,10 @@ namespace Savannah
 						m_Image->NormalizeFFT();
 						lowerFFTWLevel = m_Image->fftw_data_min;
 						CONSOLE_LOG("FFTW max: ", m_Image->fftw_data_max, "; FFTW min: ", m_Image->fftw_data_min);
-						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//						Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemesNamesList[m_ColorSchemeSelected]]};
+//						m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+						m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 						m_Image->UpdateTexture();
 						
 						m_FFTCalculated = true;
@@ -531,6 +545,46 @@ namespace Savannah
 					lowerFFTWLevel = m_Image->fftw_data_min;
 					FFTClear();
 					FFTPlan();
+					
+//					// load a custom color scheme
+//					uint32_t bestColor = 0;
+//					CONSOLE_LOG("Total colors: ", m_Image->colors.size());
+//					
+//					m_Image->colorsSorted.clear();
+//					m_Image->colorsSorted.reserve(m_Image->colors.size());
+//					for (auto it = m_Image->colors.begin(); it != m_Image->colors.end(); ++it)
+//					{
+//						m_Image->colorsSorted.push_back({it->first, it->second});
+//					}
+//					std::sort(m_Image->colorsSorted.begin(), m_Image->colorsSorted.end(), 
+//						[](const std::pair<uint32_t, uint32_t>& a, const std::pair<uint32_t, uint32_t>& b){
+//							return a.second < b.second;
+//						});
+//					CONSOLE_LOG("Sorted colors");
+//					
+//					m_ColorSchemesMap["Native"].clear();
+//					m_ColorSchemesMap["Native"].push_back({0, 0, 0, 0});
+//					uint8_t red, green, blue = 0;
+//					int colorsMax = 10;
+//					for (int i = 0; (i < colorsMax) && (i < m_Image->colorsSorted.size()); ++i)
+//					{
+//						bestColor = m_Image->colorsSorted[m_Image->colorsSorted.size() - 1 - i].second;
+//						uint8_t* look = (uint8_t*)(&bestColor);
+//						red = *look;
+//						green = *(look + 1);
+//						blue = *(look + 2);
+//						m_ColorSchemesMap["Native"].push_back({red, green, blue, 255});
+//					}
+//					m_ColorSchemesMap["Native"].push_back({255, 255, 255, 255});
+//					CONSOLE_LOG("Colors in Native colormap: ", m_ColorSchemesMap["Native"].size());
+//					for (int k = 0; k < m_ColorSchemesMap["Native"].size(); ++k)
+//					{
+//						CONSOLE_LOG("Native color #", k, 
+//							": r:", m_ColorSchemesMap["Native"][k].x, 
+//							", g:", m_ColorSchemesMap["Native"][k].y, 
+//							", b:", m_ColorSchemesMap["Native"][k].z, 
+//							", a:", m_ColorSchemesMap["Native"][k].w);
+//					}
 					
 					m_FFTCalculated = false;
 				}
@@ -606,7 +660,10 @@ namespace Savannah
 					lowerFFTWLevel = 0.0;
 				}
 				m_Image->fftw_data_min = lowerFFTWLevel;
-				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//				Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//				m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+				m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 				m_Image->UpdateTexture();
 			}
 			
@@ -620,23 +677,30 @@ namespace Savannah
 					upperFFTWlevel = 0.0;
 				}
 				m_Image->fftw_data_max = upperFFTWlevel;
-				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//				m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//				Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//				m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+				m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 				m_Image->UpdateTexture();
 			}
 			
 			ImGui::Text("Раскраска: ");
 			ImGui::SameLine(150);
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x);
-			if (ImGui::BeginCombo("###ColorSchemeSelector", m_ColorSchemes[m_ColorSchemeSelected].name.c_str()))
+			if (ImGui::BeginCombo("###ColorSchemeSelector", m_ColorSchemesNamesList[m_ColorSchemeSelected].c_str()))
 			{
 				static bool isSelected = false;
-				for (int i = 0; i < m_ColorSchemes.size(); ++i)
+				for (int i = 0; i < m_ColorSchemesNamesList.size(); ++i)
 				{
 					isSelected = (i == m_ColorSchemeSelected);
-					if (ImGui::Selectable(m_ColorSchemes[i].name.c_str(), isSelected))
+					if (ImGui::Selectable(m_ColorSchemesNamesList[i].c_str(), isSelected))
 					{
 						m_ColorSchemeSelected = i;
-						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+						m_ColorSchemeSelectedName = m_ColorSchemesNamesList[i];
+//						m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//						Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//						m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+						m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 						m_Image->UpdateTexture();
 					}
 				}
@@ -678,7 +742,10 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
 			}
@@ -694,7 +761,10 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
 			}
@@ -708,7 +778,10 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
 			}
@@ -724,7 +797,10 @@ namespace Savannah
 				{
 					NewTask(Img2FFTTasks::CalculateFFT);
 				} else {
-					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					m_Image->UpdatePixels(&(m_ColorSchemes[m_ColorSchemeSelected]), m_FourierSpectrumMode);
+//					Img2FFTColorScheme colorScheme = {m_ColorSchemeSelectedName, m_ColorSchemesMap[m_ColorSchemeSelectedName]};
+//					m_Image->UpdatePixels(&colorScheme, m_FourierSpectrumMode);
+					m_Image->UpdatePixels(&m_ColorSchemes[m_ColorSchemeSelectedName], m_FourierSpectrumMode);
 					m_Image->UpdateTexture();
 				}
 			}
@@ -759,12 +835,7 @@ namespace Savannah
 					m_fileDialogOpen = true;
 					CONSOLE_LOG("Ask to open popup");
 				}
-//				if (ImGui::MenuItem("Фурье-образ"))
-//				{
-//					NewTask(Img2FFTTasks::CalculateFFT);
-//					CONSOLE_LOG("Add a new Task: Calculate Fourier Transform");
-//				}
-//				ImGui::MenuItem(" ");
+
 				ImGui::Separator();
 				if (ImGui::MenuItem("Сохранить изображение..."))
 				{
