@@ -565,6 +565,19 @@ namespace Savannah
 		
 		NewTask(Img2FFTTasks::Idle);
 		CONSOLE_LOG("Add a new Task: Idle");
+		
+		// setup File Dialog initial values
+		m_fileDialogInfo.type = ImGuiFileDialogType_OpenFile;
+		m_fileDialogInfo.title = "Открыть файл";
+		m_fileDialogInfo.fileName = "";
+		m_fileDialogInfo.directoryPath = std::filesystem::current_path();
+		m_fileDialogInfo.fileExtensions = {
+			".PNG", 
+			".jpg", 
+			".bmp", 
+			".gif",
+		};
+		m_fileDialogInfo.fileExtensionSelected = -1;
 	}
 	
 	Img2FFT::~Img2FFT()
@@ -949,7 +962,6 @@ namespace Savannah
 					m_fileDialogInfo.type = ImGuiFileDialogType_OpenFile;
 					m_fileDialogInfo.title = "Открыть файл";
 					m_fileDialogInfo.fileName = "";
-					m_fileDialogInfo.directoryPath = std::filesystem::current_path();
 					m_fileDialogInfo.fileExtensions = {
 						".PNG", 
 						".jpg", 
@@ -967,7 +979,6 @@ namespace Savannah
 					m_fileDialogInfo.type = ImGuiFileDialogType_SaveFile;
 					m_fileDialogInfo.title = "Сохранить файл";
 					m_fileDialogInfo.fileName = "fft_image.png";
-					m_fileDialogInfo.directoryPath = std::filesystem::current_path();
 					m_fileDialogInfo.fileExtensions = {
 						".png", 
 						".jpg", 

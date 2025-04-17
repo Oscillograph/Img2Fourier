@@ -1,0 +1,11 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/dev/compilers/cmake/share/cmake-3.28/Modules/CMakeDetermineSystem.cmake:233 (message)"
+      - "CMakeLists.txt:6 (project)"
+    message: |
+      The system is: Windows - 6.1.7601 - AMD64
+...
