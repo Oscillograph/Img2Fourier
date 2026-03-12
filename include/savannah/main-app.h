@@ -3,16 +3,6 @@
 
 #include <savannah/core.h>
 
-// Dear ImGui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
-
-#include <stdio.h>
-
-#include <external/glad/include/glad/glad.h>
-#include <external/glfw/glfw3.h> // Will drag system OpenGL headers
-
 #ifndef IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 #endif
@@ -20,33 +10,41 @@
 #include <external/imgui/imgui.h>
 #include <external/imgui/imgui_internal.h> // for advanced selectable flags
 #include <external/imgui/misc/cpp/imgui_stdlib.h> // for strings
+#include <external/implot/implot.h> // for plots with implot
 
 #include <external/imgui/backends/imgui_impl_glfw.h>
 #include <external/imgui/backends/imgui_impl_opengl3.h>
 
-#include <external/imgui_filedialog/src/imgui_filedialog.h> // for file dialog 
-
 // #include <savannah/utils/dearimgui-backend.h>
+#include <savannah/platforms/opengl/opengl_window.h> // open, process and close windows on Windows
 #include <savannah/platforms/opengl/opengl_texture.h> // probably, it's better to make a separate renderer module
+
+// events
+#include <savannah/systems/events/event_app.h>
+#include <savannah/systems/events/event_key.h>
+#include <savannah/systems/events/event_mouse.h>
 
 #define GL_SILENCE_DEPRECATION
 
+/*
 static void glfw_error_callback(int error, const char* description)
 {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
+*/
 
 namespace Savannah {
 	class App {
 	public:
 		App();
+		
 		virtual ~App();
 		virtual void Init();
 		virtual void PreSetup();
 		virtual void SetupWindow();
 		virtual void SetupResources();
 		virtual void SetupGUI();
-		virtual GLFWwindow* GetWindow();
+		virtual Window* GetWindow();
 		virtual void ProcessInput();
 		virtual void Logic();
 		virtual void Render();
@@ -62,7 +60,8 @@ namespace Savannah {
 		
 	protected:
 		ImFontConfig* font_config = nullptr;
-		GLFWwindow* m_Window = nullptr;
+		Window* m_Window = nullptr;
+//		WindowStack m_WindowStack; // TODO: WindowStack implementation
 		int m_WindowWidth = 1280;
 		int m_WindowHeight = 720;
 		int m_WindowCurrentWidth = 0;
@@ -75,17 +74,18 @@ namespace Savannah {
 		float FPS = SAVANNAH_FPS60;
 		int m_IdleFrames = 0;
 		
-		bool m_fileDialogOpen = false;
-		ImFileDialogInfo m_fileDialogInfo;
-		
 	protected:
 		void SetWindowTitle(const std::string& title);
 		
 	protected:
+		void OnEvent(Event& event);
+		
 		void UpdateWindowMinimizedStatus();
 		void OnWindowMinimized();
 		void OnWindowRestored();
 		bool IsWindowMinimized();
+		bool OnWindowResized(WindowResizeEvent& event);
+		bool OnMouseClicked(MouseButtonPressed& event);
 	};
 	
 	App* CreateApplication();

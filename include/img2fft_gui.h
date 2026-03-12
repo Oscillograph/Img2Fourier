@@ -1,10 +1,11 @@
 #include <include/savannah/savannah.h>
 
 // #include <include/yaml_wrapper.h>
-#include <include/logger.h>
+// #include <include/logger.h>
 //#include <initializer_list>
 
 #include <external/fftw/fftw3.h> // to calculate FFT
+#include <external/imgui_filedialog/src/imgui_filedialog.h> // ImFileDialogInfo
 
 enum class FourierSpectrumMode
 {
@@ -16,6 +17,11 @@ enum class FourierSpectrumMode
 
 namespace Savannah 
 {
+	struct vec2f
+	{
+		float x, y = 1.0f;
+	};
+	
 	struct Img2FFTColorScheme
 	{
 		std::string name = "";
@@ -141,6 +147,10 @@ namespace Savannah
 		fftw_complex* m_fftw_out_height = nullptr;
 		fftw_plan m_fftw_plan_width;
 		fftw_plan m_fftw_plan_height;
+		
+		// GUI stuff
+		ImFileDialogInfo m_fileDialogInfo;
+		bool m_fileDialogOpen = false;
 		
 		// media resources
 		Image* m_Image = nullptr;
